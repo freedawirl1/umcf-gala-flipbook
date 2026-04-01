@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UMCF Community Excellence Gala Flipbook</title>
+  <style>
+    :root{
+      --bg1:#0b0716;
+      --bg2:#1c1140;
+      --accent:#f4c400;
+      --accent-2:#8f6fff;
+      --text:#ffffff;
+      --muted:rgba(255,255,255,.78);
+      --panel:rgba(255,255,255,.08);
+      --line:rgba(255,255,255,.12);
+      --shadow:0 22px 60px rgba(0,0,0,.48);
+      --radius:22px;
+      --page-ratio: 0.772727;
+      --turn-speed: 700ms;
+      --sheet-shadow: 0 20px 38px rgba(0,0,0,.45);
+      --book-max: 1420px;
+      --gutter: 16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, rgba(125,72,214,.35), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(255,196,0,.12), transparent 25%),
+        linear-gradient(180deg, #24104c 0%, #120b26 55%, #09070f 100%);
+      min-height:100vh;
+    }
+    .shell{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      padding:16px;
+    }
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      padding:12px 16px;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      backdrop-filter: blur(10px);
+      box-shadow:0 10px 30px rgba(0,0,0,.18);
+    }
+    .titleblock h1{
+      margin:0;
+      font-size:clamp(1rem, 2.2vw, 1.45rem);
+      letter-spacing:.02em;
+    }
+    .titleblock p{
+      margin:4px 0 0;
+      font-size:.92rem;
+      color:var(--muted);
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    button, .download{
+      appearance:none;
+      border:none;
+      background:#ffffff;
+      color:#140a2a;
+      font-weight:700;
+      padding:12px 16px;
+      border-radius:999px;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow:var(--shadow);
+      min-height:44px;
+      transition:transform .15s ease, opacity .15s ease, background .2s ease;
+    }
+    button:hover, .download:hover{ transform:translateY(-1px); }
+    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+    button.secondary{
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow:none;
+    }
+    .viewer-wrap{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:0;
+    }
+    .viewer{
+      width:min(100%, var(--book-max));
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:14px;
+      align-items:center;
+    }
+    .nav{
+      width:56px;
+      height:56px;
+      border-radius:50%;
+      font-size:1.35rem;
+      line-height:1;
+      padding:0;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.12);
+      color:white;
+      border:1px solid rgba(255,255,255,.15);
+      box-shadow:none;
+    }
+    .book-stage{
+      width:100%;
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(8px);
+      overflow:hidden;
+      position:relative;
+    }
+    .book-stage::before{
+      content:"";
+      position:absolute;
+      inset:10px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0));
+      pointer-events:none;
+    }
+    .book-shell{
+      position:relative;
+      width:100%;
+      max-width:1280px;
+      margin:0 auto;
+      perspective:2600px;
+      min-height:min(74vh, 980px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .book-base{
+      width:100%;
+      display:grid;
+      gap:var(--gutter);
+      align-items:center;
+      justify-content:center;
+    }
+    .book-base.spread{ grid-template-columns:1fr 1fr; }
+    .book-base.single{ grid-template-columns:minmax(0, 1fr); max-width:min(92vw, 760px); }
+    .page-frame{
+      position:relative;
+      width:100%;
+      aspect-ratio:var(--page-ratio);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:var(--sheet-shadow);
+      background:#090909;
+      user-select:none;
+      -webkit-user-drag:none;
+      transform-style:preserve-3d;
+    }
+    .page-frame::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+    .page-frame.left::after{
+      background:linear-gradient(90deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 10%, rgba(0,0,0,0) 78%, rgba(0,0,0,.20) 100%);
+    }
+    .page-frame.right::after{
+      background:linear-gradient(90deg, rgba(0,0,0,.22) 0%, rgba(0,0,0,0) 22%, rgba(255,255,255,0) 90%, rgba(255,255,255,.06) 100%);
+    }
+    .book-base.single .page-frame::after{
+      background:linear-gradient(90deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,0) 14%, rgba(0,0,0,0) 84%, rgba(0,0,0,.16) 100%);
+    }
+    .page-frame img,
+    .flip-sheet img,
+    .flip-sheet .back{
+      width:100%;
+      height:100%;
+      display:block;
+      object-fit:contain;
+      background:#000;
+    }
+    .book-spine{
+      position:absolute;
+      top:4%;
+      bottom:4%;
+      left:50%;
+      width:24px;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(0,0,0,.36), rgba(255,255,255,.08), rgba(0,0,0,.4));
+      opacity:.6;
+      filter:blur(1.5px);
+      pointer-events:none;
+      z-index:2;
+    }
+    .book-shell.single-mode .book-spine{ display:none; }
+    .flip-layer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:5;
+    }
+    .flip-sheet{
+      position:absolute;
+      top:0;
+      width:calc((100% - var(--gutter)) / 2);
+      aspect-ratio:var(--page-ratio);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 24px 48px rgba(0,0,0,.5);
+      transform-style:preserve-3d;
+      backface-visibility:hidden;
+      will-change:transform, filter;
+    }
+    .flip-sheet.next{
+      right:0;
+      transform-origin:left center;
+      animation:turnNext var(--turn-speed) cubic-bezier(.2,.65,.18,1) forwards;
+    }
+    .flip-sheet.prev{
+      left:0;
+      transform-origin:right center;
+      animation:turnPrev var(--turn-speed) cubic-bezier(.2,.65,.18,1) forwards;
+    }
+    .flip-sheet.single-next,
+    .flip-sheet.single-prev{
+      left:50%;
+      width:min(100%, 760px);
+      transform:translateX(-50%);
+      transform-origin:left center;
+      animation:singleTurn var(--turn-speed) cubic-bezier(.2,.65,.18,1) forwards;
+    }
+    .flip-sheet.single-prev{ transform-origin:right center; animation-name:singleTurnPrev; }
+    .flip-sheet .front,
+    .flip-sheet .back{
+      position:absolute;
+      inset:0;
+      backface-visibility:hidden;
+    }
+    .flip-sheet .back{
+      transform:rotateY(180deg);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.92), rgba(245,245,245,.96) 22%, rgba(230,230,230,.94) 60%, rgba(210,210,210,.98));
+    }
+    .flip-sheet .shadow{
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg, rgba(0,0,0,.30), rgba(0,0,0,0) 22%, rgba(255,255,255,.07) 80%, rgba(0,0,0,.28));
+      mix-blend-mode:multiply;
+      pointer-events:none;
+    }
+    .statusbar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      padding:0 4px;
+    }
+    .status{
+      color:var(--muted);
+      font-size:.95rem;
+    }
+    .range-wrap{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex:1;
+      min-width:220px;
+    }
+    input[type=range]{ width:100%; accent-color:var(--accent); }
+    .hint{
+      color:var(--muted);
+      font-size:.88rem;
+      text-align:center;
+      padding-bottom:6px;
+    }
+    .page-hotspot{
+      position:absolute;
+      inset:0;
+      z-index:4;
+      background:transparent;
+      border:0;
+      cursor:pointer;
+    }
+    @keyframes turnNext {
+      0%   { transform:rotateY(0deg); filter:brightness(1); }
+      40%  { filter:brightness(.95); }
+      100% { transform:rotateY(-180deg); filter:brightness(.88); }
+    }
+    @keyframes turnPrev {
+      0%   { transform:rotateY(0deg); filter:brightness(1); }
+      40%  { filter:brightness(.95); }
+      100% { transform:rotateY(180deg); filter:brightness(.88); }
+    }
+    @keyframes singleTurn {
+      0%   { transform:translateX(-50%) rotateY(0deg); }
+      100% { transform:translateX(-50%) rotateY(-180deg); }
+    }
+    @keyframes singleTurnPrev {
+      0%   { transform:translateX(-50%) rotateY(0deg); }
+      100% { transform:translateX(-50%) rotateY(180deg); }
+    }
+    @media (max-width: 979px){
+      .viewer{ grid-template-columns:1fr; }
+      .nav{ display:none; }
+      .book-stage{ padding:12px; }
+      .statusbar{ gap:8px; }
+      .titleblock p{ margin-top:6px; }
+      .actions{ width:100%; }
+      .actions > *{ flex:1 1 auto; text-align:center; }
+      .book-shell{ min-height:auto; }
+      .book-base.single{ max-width:min(100%, 560px); }
+      .flip-sheet.single-next,
+      .flip-sheet.single-prev{ width:min(100%, 560px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="titleblock">
+        <h1>Urban Music &amp; Cultural Fest — Community Excellence Gala</h1>
+        <p>Animated page-turn flipbook for desktop and mobile</p>
+      </div>
+      <div class="actions">
+        <button id="toggleMode" class="secondary" type="button">Use single-page view</button>
+        <a class="download" href="../2026-UMCF-Gala-Booklet.pdf" download>Download PDF</a>
+      </div>
+    </div>
+
+    <div class="viewer-wrap">
+      <div class="viewer">
+        <button id="prevBtn" class="nav" type="button" aria-label="Previous pages">❮</button>
+
+        <div class="book-stage">
+          <div id="bookShell" class="book-shell">
+            <div id="bookBase" class="book-base"></div>
+            <div class="book-spine"></div>
+            <div id="flipLayer" class="flip-layer" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <button id="nextBtn" class="nav" type="button" aria-label="Next pages">❯</button>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div id="status" class="status">Loading…</div>
+      <div class="range-wrap">
+        <span class="status">Jump</span>
+        <input id="slider" type="range" min="1" max="36" value="1" />
+      </div>
+    </div>
+    <div class="hint">Desktop: click arrows or use your keyboard. Mobile: swipe left or right.</div>
+  </div>
+
+  <script>
+    const totalPages = 36;
+    const pageUrls = Array.from({length: totalPages}, (_, i) => `../pages/page-${String(i + 1).padStart(2, '0')}.jpg`);
+
+    let forcedSingle = false;
+    let current = 1;
+    let isAnimating = false;
+
+    const bookShell = document.getElementById('bookShell');
+    const bookBase = document.getElementById('bookBase');
+    const flipLayer = document.getElementById('flipLayer');
+    const status = document.getElementById('status');
+    const slider = document.getElementById('slider');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const toggleMode = document.getElementById('toggleMode');
+
+    function isMobile() {
+      return window.innerWidth < 980;
+    }
+
+    function useSpread() {
+      return !isMobile() && !forcedSingle;
+    }
+
+    function normalizeCurrent(page) {
+      page = Math.max(1, Math.min(totalPages, page));
+      if (useSpread() && page > 1 && page < totalPages && page % 2 === 0) page -= 1;
+      return page;
+    }
+
+    function getVisiblePages(page = current) {
+      const spread = useSpread();
+      if (!spread) return [page];
+      if (page === 1 || page === totalPages) return [page];
+      return [page, Math.min(page + 1, totalPages)];
+    }
+
+    function createPage(pageNum, side = '') {
+      const el = document.createElement('div');
+      el.className = `page-frame ${side}`.trim();
+      const img = document.createElement('img');
+      img.src = pageUrls[pageNum - 1];
+      img.alt = `Program page ${pageNum}`;
+      img.loading = 'eager';
+      el.appendChild(img);
+
+      const hotspot = document.createElement('button');
+      hotspot.className = 'page-hotspot';
+      hotspot.type = 'button';
+      hotspot.setAttribute('aria-label', `Open page ${pageNum}`);
+      hotspot.addEventListener('click', (e) => {
+        if (isAnimating) return;
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (x < rect.width / 2) prev();
+        else next();
+      });
+      el.appendChild(hotspot);
+      return el;
+    }
+
+    function createFlipSheet(pageNum, direction, single = false) {
+      const sheet = document.createElement('div');
+      sheet.className = `flip-sheet ${direction}${single ? ` single-${direction}` : ''}`;
+
+      const front = document.createElement('div');
+      front.className = 'front';
+      const frontImg = document.createElement('img');
+      frontImg.src = pageUrls[pageNum - 1];
+      frontImg.alt = '';
+      front.appendChild(frontImg);
+
+      const back = document.createElement('div');
+      back.className = 'back';
+      const shadow = document.createElement('div');
+      shadow.className = 'shadow';
+
+      sheet.append(front, back, shadow);
+      return sheet;
+    }
+
+    function preloadAround() {
+      const upcoming = new Set();
+      for (let i = Math.max(1, current - 2); i <= Math.min(totalPages, current + 4); i++) {
+        upcoming.add(i);
+      }
+      upcoming.forEach(i => {
+        const img = new Image();
+        img.src = pageUrls[i - 1];
+      });
+    }
+
+    function updateStatus(pages) {
+      if (pages.length === 1) status.textContent = `Page ${pages[0]} of ${totalPages}`;
+      else status.textContent = `Pages ${pages[0]}–${pages[1]} of ${totalPages}`;
+    }
+
+    function render() {
+      current = normalizeCurrent(current);
+      const pages = getVisiblePages();
+      const spread = useSpread();
+
+      bookShell.className = `book-shell ${spread ? 'spread-mode' : 'single-mode'}`;
+      bookBase.className = `book-base ${spread && pages.length === 2 ? 'spread' : 'single'}`;
+      bookBase.innerHTML = '';
+
+      if (pages.length === 1) {
+        bookBase.appendChild(createPage(pages[0]));
+      } else {
+        bookBase.appendChild(createPage(pages[0], 'left'));
+        bookBase.appendChild(createPage(pages[1], 'right'));
+      }
+
+      slider.value = current;
+      prevBtn.disabled = current <= 1 || isAnimating;
+      nextBtn.disabled = pages[pages.length - 1] >= totalPages || isAnimating;
+      toggleMode.textContent = forcedSingle ? 'Use spread view' : 'Use single-page view';
+      updateStatus(pages);
+      preloadAround();
+    }
+
+    function targetPage(direction) {
+      if (direction === 'next') {
+        if (useSpread()) return current === 1 ? 3 : current + 2;
+        return current + 1;
+      }
+      if (useSpread()) return current <= 3 ? 1 : current - 2;
+      return current - 1;
+    }
+
+    function canMove(direction) {
+      const pages = getVisiblePages();
+      if (direction === 'next') return pages[pages.length - 1] < totalPages;
+      return current > 1;
+    }
+
+    function animateTurn(direction) {
+      if (isAnimating || !canMove(direction)) return;
+      isAnimating = true;
+
+      const oldCurrent = current;
+      const oldPages = getVisiblePages(oldCurrent);
+      const nextCurrent = normalizeCurrent(targetPage(direction));
+      current = nextCurrent;
+      render();
+
+      flipLayer.innerHTML = '';
+
+      const single = !useSpread() || getVisiblePages().length === 1;
+      let turningPage = single
+        ? oldPages[0]
+        : (direction === 'next' ? oldPages[oldPages.length - 1] : oldPages[0]);
+
+      const sheet = createFlipSheet(turningPage, direction, single);
+      flipLayer.appendChild(sheet);
+
+      sheet.addEventListener('animationend', () => {
+        flipLayer.innerHTML = '';
+        isAnimating = false;
+        render();
+      }, { once:true });
+    }
+
+    function next() { animateTurn('next'); }
+    function prev() { animateTurn('prev'); }
+
+    prevBtn.addEventListener('click', prev);
+    nextBtn.addEventListener('click', next);
+
+    slider.addEventListener('input', () => {
+      if (isAnimating) return;
+      current = Number(slider.value);
+      render();
+    });
+
+    toggleMode.addEventListener('click', () => {
+      if (isAnimating) return;
+      forcedSingle = !forcedSingle;
+      render();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    });
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+    }, {passive:true});
+
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].clientX;
+      const delta = touchEndX - touchStartX;
+      if (Math.abs(delta) < 45 || isAnimating) return;
+      if (delta < 0) next();
+      else prev();
+    }, {passive:true});
+
+    window.addEventListener('resize', () => {
+      if (isAnimating) return;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
